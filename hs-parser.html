@@ -1,0 +1,123 @@
+<input type="file" onchange="readFile(this)">
+
+<script>
+function readFile(input) {
+  let file = input.files[0];
+  let records = [];
+  let finalRecords = [];
+  let dividerString = '==================================================================================';
+  let reader = new FileReader();
+  let dataToWrite = "";
+  let lastLine = null;
+  reader.readAsText(file);
+
+  reader.onload = function() {
+    let fileResult = reader.result;
+    do {
+      let record = fileResult.substring(0, fileResult.indexOf(dividerString));
+      if(record) {
+        let severityIndex = record.indexOf('Severity: ');
+        let lineIndex = record.indexOf('Line: ');
+        let columnIndex = record.indexOf('Column: ');
+        let fileIndex = record.indexOf('File: ');
+        let codeIndex = record.indexOf('Code: ');
+        let detailsIndex = record.indexOf('Details: ');
+        let obj = {
+          severity: record.substring(severityIndex+10, lineIndex-1),
+          line: record.substring(lineIndex+6, columnIndex-1),
+          file: record.substring(fileIndex+6, codeIndex-1),
+          details: record.substring(detailsIndex+9, record.length-1),
+        };
+        records.push(obj);
+      }  
+      fileResult = fileResult.substring(fileResult.indexOf(dividerString) + dividerString.length, fileResult.length);
+    } while(fileResult.length > 0);
+    for(let recordIndex=0; recordIndex<records.length; recordIndex++) {
+      for(let fileIndex=recordIndex+1; fileIndex<records.length; fileIndex++) {
+        if(records[recordIndex].details < records[fileIndex].details) {
+          let temp = records[recordIndex];
+          records[recordIndex] = records[fileIndex];
+          records[fileIndex] = temp;
+        }
+      }
+    }
+    let count1 = 0;
+    let count2 = 0;
+    let currentRecord = {
+      ...records[0],
+      file: [records[0].file],
+      line: [records[0].line]
+    };
+    for(let recordIndex=1; recordIndex<records.length; recordIndex++) {
+      if(currentRecord.details == records[recordIndex].details) {
+        currentRecord.file.push(records[recordIndex].file);
+        currentRecord.line.push(records[recordIndex].line);
+      }
+      else {
+        finalRecords.push(currentRecord);
+        currentRecord = {
+          ...records[recordIndex],
+          file: [records[recordIndex].file],
+          line: [records[recordIndex].line]
+        };
+      }
+    }
+    finalRecords.push(currentRecord);
+    for(let recordIndex=0; recordIndex<finalRecords.length; recordIndex++) {
+      //console.log("Severity: ", finalRecords[recordIndex].severity);
+      dataToWrite += "\n" + "Severity: " + finalRecords[recordIndex].severity + "\n";
+      //console.log("Details: ", finalRecords[recordIndex].details);
+      dataToWrite += "\n" + "Details: " + finalRecords[recordIndex].details + "\n";
+      let currentFile = finalRecords[recordIndex].file[0];
+      let currentLine = [finalRecords[recordIndex].line[0]];
+      //console.log("Occurrences: ");
+      dataToWrite += "\n" + "Occurrence(s): " + "\n";
+      for(let fileIndex=1; fileIndex<finalRecords[recordIndex].file.length; fileIndex++) {
+        if(currentFile == finalRecords[recordIndex].file[fileIndex]) {
+          currentLine.push(finalRecords[recordIndex].line[fileIndex]);
+        }
+        else {
+          let printStr = currentFile + "\tLine(s): " + currentLine[0];
+          count1++;
+          count2++;
+          lastLine = currentLine[0];
+          for(let lineIndex=1; lineIndex<currentLine.length; lineIndex++) {
+            count1++;
+            if(lastLine != currentLine[lineIndex]) {
+              printStr += ", " + currentLine[lineIndex];
+              lastLine = currentLine[lineIndex];
+              count2++;
+            }
+          }
+          //console.log(printStr);
+          dataToWrite += "\n" + printStr + "\n";
+          currentFile = finalRecords[recordIndex].file[fileIndex];
+          currentLine = [finalRecords[recordIndex].line[fileIndex]];
+        }
+      }
+      let printStr = currentFile + "\tLine(s): " + currentLine[0];
+      count1++;
+      count2++;
+      lastLine = currentLine[0];
+      for(let lineIndex=1; lineIndex<currentLine.length; lineIndex++) {
+        count1++;
+        if(lastLine != currentLine[lineIndex]) {
+          printStr += ", " + currentLine[lineIndex];
+          lastLine = currentLine[lineIndex];
+          count2++;
+        }
+      }
+      //console.log(printStr);
+      dataToWrite += "\n" + printStr + "\n";
+    }
+    console.log(dataToWrite);
+    console.log(count1);
+    console.log(count2);
+  };
+
+  reader.onerror = function() {
+    console.log(reader.error);
+  };
+
+}
+</script>
