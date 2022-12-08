@@ -8,6 +8,8 @@ This tool can be used to group the output of the Horusec SAST tool.
 
 Google Chrome, Microsoft Edge, or Mozilla Firefox.
 
+As a preliminary step, the json file included in the repository has to be placed at the root of your project. This will generate a text file with the horusec console output included.
+
 ## Getting Started
 
 1. Simply clone the repository on your machine and run the HTML file in the root directory
