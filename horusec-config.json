@@ -31,7 +31,9 @@
     "horusecCliFilesOrPathsToIgnore": 
     [
         "*tmp*",
-        "**/.vscode/**"
+        "**/.vscode/**",
+        "**/node-modules/**",
+        "package-lock.json"
     ],
     "horusecCliEnableShellcheck": false,
     "horusecCliFilterPath": "",

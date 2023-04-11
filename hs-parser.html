@@ -41,8 +41,6 @@ function readFile(input) {
         }
       }
     }
-    let count1 = 0;
-    let count2 = 0;
     let currentRecord = {
       ...records[0],
       file: [records[0].file],
@@ -63,6 +61,15 @@ function readFile(input) {
       }
     }
     finalRecords.push(currentRecord);
+    for(let recordIndex1=0; recordIndex1<finalRecords.length; recordIndex1++) {
+      for(let recordIndex2=recordIndex1+1; recordIndex2<finalRecords.length; recordIndex2++) {
+        if(finalRecords[recordIndex1].severity > finalRecords[recordIndex2].severity) {
+          let temp = finalRecords[recordIndex1];
+          finalRecords[recordIndex1] = finalRecords[recordIndex2];
+          finalRecords[recordIndex2] = temp;
+        }
+      }
+    }
     for(let recordIndex=0; recordIndex<finalRecords.length; recordIndex++) {
       //console.log("Severity: ", finalRecords[recordIndex].severity);
       dataToWrite += "\n" + "Severity: " + finalRecords[recordIndex].severity + "\n";
@@ -78,15 +85,11 @@ function readFile(input) {
         }
         else {
           let printStr = currentFile + "\tLine(s): " + currentLine[0];
-          count1++;
-          count2++;
           lastLine = currentLine[0];
           for(let lineIndex=1; lineIndex<currentLine.length; lineIndex++) {
-            count1++;
             if(lastLine != currentLine[lineIndex]) {
               printStr += ", " + currentLine[lineIndex];
               lastLine = currentLine[lineIndex];
-              count2++;
             }
           }
           //console.log(printStr);
@@ -96,23 +99,18 @@ function readFile(input) {
         }
       }
       let printStr = currentFile + "\tLine(s): " + currentLine[0];
-      count1++;
-      count2++;
       lastLine = currentLine[0];
       for(let lineIndex=1; lineIndex<currentLine.length; lineIndex++) {
-        count1++;
         if(lastLine != currentLine[lineIndex]) {
           printStr += ", " + currentLine[lineIndex];
           lastLine = currentLine[lineIndex];
-          count2++;
         }
       }
       //console.log(printStr);
       dataToWrite += "\n" + printStr + "\n";
+      dataToWrite += "\n" + dividerString + "\n";
     }
     console.log(dataToWrite);
-    console.log(count1);
-    console.log(count2);
   };
 
   reader.onerror = function() {
