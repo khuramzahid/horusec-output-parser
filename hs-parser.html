@@ -7,7 +7,9 @@ function readFile(input) {
   let finalRecords = [];
   let dividerString = '==================================================================================';
   let reader = new FileReader();
-  let dataToWrite = "";
+  let detailSet = new Set();
+  let dataToWrite = [];
+  let rawData = [];
   let lastLine = null;
   reader.readAsText(file);
 
@@ -71,44 +73,70 @@ function readFile(input) {
       }
     }
     for(let recordIndex=0; recordIndex<finalRecords.length; recordIndex++) {
-      //console.log("Severity: ", finalRecords[recordIndex].severity);
-      dataToWrite += "\n" + "Severity: " + finalRecords[recordIndex].severity + "\n";
-      //console.log("Details: ", finalRecords[recordIndex].details);
-      dataToWrite += "\n" + "Details: " + finalRecords[recordIndex].details + "\n";
+      let obj = {};
+      obj.severity = finalRecords[recordIndex].severity;
+      let details = finalRecords[recordIndex].details;
+      details = details.replaceAll('\n', '');
+      details = details.replaceAll('      ', '. ');
+      details = details.replaceAll('..', '. ');
+      obj.details = details.split(/\(\d\/\d\)\s\*\s/).slice(1).map(description => description.trim());
+      for (const d of obj.details) {
+        detailSet.add(d);
+      }
+      obj.detailsCount = obj.details.length;
       let currentFile = finalRecords[recordIndex].file[0];
       let currentLine = [finalRecords[recordIndex].line[0]];
-      //console.log("Occurrences: ");
-      dataToWrite += "\n" + "Occurrence(s): " + "\n";
+      obj.occurrences = [];
       for(let fileIndex=1; fileIndex<finalRecords[recordIndex].file.length; fileIndex++) {
         if(currentFile == finalRecords[recordIndex].file[fileIndex]) {
           currentLine.push(finalRecords[recordIndex].line[fileIndex]);
         }
         else {
-          let printStr = currentFile + "\tLine(s): " + currentLine[0];
+          let printStr = {
+            file: currentFile, 
+            lines: [currentLine[0]]
+          };
           lastLine = currentLine[0];
           for(let lineIndex=1; lineIndex<currentLine.length; lineIndex++) {
             if(lastLine != currentLine[lineIndex]) {
-              printStr += ", " + currentLine[lineIndex];
+              printStr.lines.push(currentLine[lineIndex]);
               lastLine = currentLine[lineIndex];
             }
           }
-          //console.log(printStr);
-          dataToWrite += "\n" + printStr + "\n";
+          obj.occurrences.push(printStr);
           currentFile = finalRecords[recordIndex].file[fileIndex];
           currentLine = [finalRecords[recordIndex].line[fileIndex]];
         }
       }
-      let printStr = currentFile + "\tLine(s): " + currentLine[0];
+      let printStr = {
+        file: currentFile, 
+        lines: [currentLine[0]]
+      };
       lastLine = currentLine[0];
       for(let lineIndex=1; lineIndex<currentLine.length; lineIndex++) {
         if(lastLine != currentLine[lineIndex]) {
-          printStr += ", " + currentLine[lineIndex];
+          printStr.lines.push(currentLine[lineIndex]);
           lastLine = currentLine[lineIndex];
         }
       }
-      //console.log(printStr);
-      dataToWrite += "\n" + printStr + "\n";
-      dataToWrite += "\n" + dividerString + "\n";
+      obj.occurrences.push(printStr);
+      rawData.push(obj);
+    }
+
+    const detailsArray = Array.from(detailSet);
+
+    for(const detail of detailsArray) {
+      let obj = {
+        detail: detail,
+        occurrences: []
+      };
+      for(const data of rawData) {
+        let found = false;
+        if(data.details.indexOf(detail) != -1) {
+          obj.occurrences = [...obj.occurrences, { occurrences: data.occurrences, severity: data.severity }];
+        }
+      }
+      dataToWrite.push(obj);
     }
     console.log(dataToWrite);
   };
